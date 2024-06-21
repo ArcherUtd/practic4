@@ -39,7 +39,16 @@ users=[
 
 ]
 
+
+methods_of_encryption=[
+    {"id": 1, "caption": "Метод Цезаря", "json_params": {"text": "str", "shifts": "int"}, "description": "Шифруется методом сдвига"},
+    {"id": 2, "caption": "Метод Виженера", "json_params": {"text": "str", "key": "str"}, "description": "Метод полиалфавитного шифрования с использованием ключевого слова"},
+]
+
+
 @app.post("/user")
 def append_user(user: List[User]):
     users.extend(user)
     return users
+
+
