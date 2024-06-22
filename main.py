@@ -27,11 +27,11 @@ class Sessions(BaseModel):
     user_id: int
     method_id: int
     data_in: str
-    params: str
+    params: dict
     data_out: str
-    status: str
+    status: int
     created_at: datetime
-    time_op: datetime
+
 
 users=[
     {"login": "IgorKrutyi", "secret": "KalinaNEsport"},
@@ -62,6 +62,7 @@ def get_list_users():
         for key, value in user.items():
             if key != "secret":
                 new_user[key] = value
+        users_without_secret.append(new_user)
     return users_without_secret
 
 
