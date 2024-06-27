@@ -1,4 +1,5 @@
 from datetime import datetime
+from http.client import HTTPException
 from typing import List
 
 from fastapi import FastAPI
@@ -33,6 +34,19 @@ class Sessions(BaseModel):
     created_at: datetime
 
 
+
+class Sessions(BaseModel):
+    id: int
+    user_id: int
+    method_id: int
+    data_in: str
+    params: dict
+    data_out: str
+    status: int
+    created_at: datetime
+    time_op: float
+
+
 users=[
     {"login": "IgorKrutyi", "secret": "KalinaNEsport"},
     {"login": "StasGod", "secret": "OpelSila"},
@@ -46,6 +60,15 @@ methods_of_encryption=[
     {"id": 1, "caption": "Метод Цезаря", "json_params": {"text": "str", "shifts": "int"}, "description": "Шифруется методом сдвига"},
     {"id": 2, "caption": "Метод Виженера", "json_params": {"text": "str", "key": "str"}, "description": "Метод полиалфавитного шифрования с использованием ключевого слова"},
 ]
+
+
+sessions = [
+    {"id": 1, "user_id": 2, "method_id": 1, "data_in": "ПРИВЕТ", "params": {"text": "ПРИВЕТ", "shifts": 3}, "data_out": "МНЁ9ВП", "status": 200, "created_at": "2024-06-16 15:34:12.345678", "time_op": 0.21},
+    {"id": 2, "user_id": 1, "method_id": 1, "data_in": "ЁЛКА И ЛАМПОЧКА", "params": {"text": "ЁЛКА И ЛАМПОЧКА", "shifts": 1337}, "data_out": "5БА-Х8ХБ-ВЕДМА-", "status": 200, "created_at": "2024-06-16 16:54:17.123678", "time_op": 0.27},
+    {"id": 3, "user_id": 3, "method_id": 2, "data_in": "КАРЛ УКРАЛ КАРАЛЫ", "params": {"text": "КАРЛ УКРАЛ КАРАЛЫ", "keyword": "КЛАР"}, "data_out": "-Э.6К9ЬБЬ1А5Ь6С6Ё", "status": 200, "created_at": "2024-05-23 17:25:14.243865", "time_op": 0.22},
+]
+
+
 
 
 @app.post("/user")
@@ -71,6 +94,12 @@ def get_methods():
     return methods_of_encryption
 
 
+def identification_user(login: str, secret: str):
+    user = next((u for u in users if u["login"] == login and u["secret"] == secret), None)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid login or secret")
+    return user
+
 @app.get("/encrypt/cesar")
 def encrypt_cesar_method(text_for_encrypt: str, number_of_shifts: int):
     text_for_encrypt_upper = text_for_encrypt.upper()
@@ -84,7 +113,6 @@ def encrypt_cesar_method(text_for_encrypt: str, number_of_shifts: int):
             encrypted_text.append(ALPHABET[new_index])
         else:
             encrypted_text.append(char)
-
     return ''.join(encrypted_text)
 
 
@@ -145,3 +173,22 @@ def decrypt_vigenere_method(text_for_decrypt: str, keyword: str):
             decrypted_text.append(char)
 
     return ''.join(decrypted_text)
+
+
+@app.get("/get_session/{session_id}")
+def get_session(session_id: int, login: str, secret: str):
+    user = identification_user(login, secret)
+    session = next((s for s in sessions if s["id"] == session_id and s["user_id"] == user["id"]), None)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found or access denied")
+    return session
+
+
+@app.delete("/delete_session/{session_id}")
+def delete_session(session_id: int, login: str, secret: str):
+    user = identification_user(login, secret)
+    session_index = next((i for i, s in enumerate(sessions) if s["id"] == session_id and s["user_id"] == user["id"]), None)
+    if session_index is None:
+        raise HTTPException(status_code=404, detail="Session not found or access denied")
+    del sessions[session_index]
+    return {"status": 200, "data": sessions}
